@@ -16,7 +16,7 @@ class Sender extends Model
     protected function casts(): array
     {
         return [
-            'user_id' => 'integer',
+            'account_id' => 'integer',
             'name' => 'string',
             'slug' => 'string'
         ];

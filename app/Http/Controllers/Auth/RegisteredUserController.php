@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
+use App\Models\{ Account, User };
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\DB;
 
 class RegisteredUserController extends Controller
 {
@@ -36,15 +37,25 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        DB::transaction(function () use ($request) {
 
-        event(new Registered($user));
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
 
-        Auth::login($user);
+            $account = Account::create([
+                'user_id' => $user->id,
+                'sms' => 5,
+            ]);
+
+            $user->update(['account_id' => $account->id]);
+
+            event(new Registered($user));
+
+            Auth::login($user);
+        });
 
         return to_route('dashboard');
     }
