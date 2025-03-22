@@ -16,7 +16,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 
-
 export default function Senders({ senders }: { senders: Sender[] }) {
 
     return (
