@@ -15,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     })->name('dashboard');
 
     Route::get('senders', [SenderController::class, 'index'])->name('senders.index');
+    Route::post('senders', [SenderController::class, 'store'])->name('senders.store');
 });
 
 require __DIR__.'/settings.php';

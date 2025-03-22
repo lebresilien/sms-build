@@ -4,9 +4,12 @@ namespace App\Http\Controllers\Sms;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Inertia\Response;
 use App\Repositories\SenderRepository;
+use App\Http\Requests\Senders\SenderRequest;
 
 class SenderController extends Controller
 {
@@ -23,12 +26,23 @@ class SenderController extends Controller
      */
     public function index(Request $request): Response
     {
-        /*  return $request->user()->account->id;
-        $data = $this->senderRepository->all(['account_id' => $request->user()->account->id]); */
-$data = [];
+        $data = $this->senderRepository->all(['account_id' => $request->user()->account->id]);
+
         return Inertia::render('senders/page', [
-            'data' => $data
+            'senders' => $data
         ]);
+    }
+
+    public function store(SenderRequest $request): RedirectResponse {
+
+        $data = $this->senderRepository->create([
+            'account_id' => $request->user()->account->id,
+            'name' => $request->name,
+            'slug' => strtoupper(Str::slug($request->name))
+        ]);
+
+        //return response()->json($data);
+        return to_route('senders.index');
     }
 
 }
