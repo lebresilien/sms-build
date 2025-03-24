@@ -41,7 +41,17 @@ class SenderController extends Controller
             'slug' => strtoupper(Str::slug($request->name))
         ]);
 
-        //return response()->json($data);
+        return to_route('senders.index');
+    }
+
+    public function delete($id): RedirectResponse {
+
+        $item = $this->senderRepository->find($id);
+
+        //if(!$item) return '';
+
+        $this->senderRepository->delete($id);
+
         return to_route('senders.index');
     }
 

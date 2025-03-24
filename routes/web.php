@@ -16,6 +16,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('senders', [SenderController::class, 'index'])->name('senders.index');
     Route::post('senders', [SenderController::class, 'store'])->name('senders.store');
+    Route::delete('senders/{id}', [SenderController::class, 'delete'])->name('senders.delete');
 });
 
 require __DIR__.'/settings.php';

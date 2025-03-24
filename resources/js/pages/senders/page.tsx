@@ -7,14 +7,12 @@ import AppLayout from '@/layouts/app-layout';
 import { Sender, columns } from "./columns";
 import { DataTable } from "./data-table";
 
-
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Senders',
         href: '/senders',
     },
 ];
-
 
 export default function Senders({ senders }: { senders: Sender[] }) {
 
