@@ -3,7 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\{ belongsTo, HasMany };
+use Illuminate\Database\Eloquent\Relations\{ BelongsTo, HasMany };
 
 class Account extends Model
 {
@@ -24,7 +24,7 @@ class Account extends Model
         return $this->hasMany(Sender::class);
     }
 
-    public function user(): belongsTo {
+    public function user(): BelongsTo {
         return $this->belongsTo(User::class);
     }
 }

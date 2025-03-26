@@ -36,7 +36,7 @@ const DisplayRow = ({ item }: { item: Sender }) => {
                 >
                     Confirmer
                 </Button>
-                <Button className="cursor-pointer border-1 text-black border-black bg-transparent hover:bg-black hover:text-white " onClick={() => setStatus(!status)}>Annuler</Button>
+                <Button className="cursor-pointer border-1 text-black border-black bg-transparent hover:bg-black hover:text-white" onClick={() => setStatus(!status)}>Annuler</Button>
             </div>
         }
     </div>
