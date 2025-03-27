@@ -48,8 +48,6 @@ class SenderController extends Controller
 
         $item = $this->senderRepository->find($id);
 
-        //if(!$item) return '';
-
         $this->senderRepository->delete($id);
 
         return to_route('senders.index');

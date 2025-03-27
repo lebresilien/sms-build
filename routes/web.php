@@ -20,6 +20,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('senders/{id}', [SenderController::class, 'delete'])->name('senders.delete');
 
     Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 });
 
 require __DIR__.'/settings.php';

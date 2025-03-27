@@ -4,8 +4,9 @@ namespace App\Http\Controllers\Sms;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Repositories\SenderRepository;
-use App\Repositories\MessageRepository;
+use Illuminate\Http\RedirectResponse;
+use App\Repositories\{ SenderRepository, MessageRepository, TransactionRepository };
+use App\Http\Requests\MessageRequest;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -14,11 +15,17 @@ class MessageController extends Controller
     /** @var MessageRepository */
     private $messageRepository;
     private $senderRepository;
+    private $trxRepository;
 
-    public function __construct(MessageRepository $messageRepository, SenderRepository $senderRepository)
+    public function __construct(
+        MessageRepository $messageRepository,
+        SenderRepository $senderRepository,
+        TransactionRepository $trxRepository
+    )
     {
         $this->messageRepository = $messageRepository;
         $this->senderRepository = $senderRepository;
+        $this->trxRepository = $trxRepository;
     }
 
     public function index(Request $request): Response
@@ -31,5 +38,28 @@ class MessageController extends Controller
             'senders' => $data,
             'balance' => $balance
         ]);
+    }
+
+    public function store(MessageRequest $request): RedirectResponse {
+
+        $campaign = $this->messageRepository->create([
+            'sender_id' => $this->senderRepository->all(['slug' => $request->sender_id])->first()->id,
+            'title' => $request->title,
+            'message' => $request->message
+        ]);
+
+        foreach($request->phones as $phone) {
+
+            if($phone) {
+                $this->trxRepository->create([
+                    'campaign_id' => $campaign->id,
+                    'phone' => $phone,
+                ]);
+            }
+
+        }
+
+        return to_route('messages.index')->with('success', 'Opération réussie !');
+
     }
 }

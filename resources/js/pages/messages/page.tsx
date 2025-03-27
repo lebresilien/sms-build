@@ -1,4 +1,4 @@
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, usePage } from '@inertiajs/react';
 
 import { type BreadcrumbItem } from '@/types';
 
@@ -18,8 +18,9 @@ import { Button } from '@/components/ui/button';
 import { LoaderCircle } from 'lucide-react';
 import { Sender } from '../senders/columns';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { FormEventHandler, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { toast } from "sonner";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -32,14 +33,19 @@ type messageForm = {
     title: string;
     sender_id: string;
     message: string;
+    phones: string[]
 };
+
 export default function Messages({ senders, balance }: { senders: Sender[], balance: number }) {
 
     const { data, setData, post, processing, errors, reset } = useForm<Required<messageForm>>({
         title: '',
         sender_id: '',
         message: '',
+        phones: []
     });
+
+    const { success } = usePage().props as { success?: string };
 
     const [value, setValue] = useState('');
     const [isValid, setIsValid] = useState(true);
@@ -62,16 +68,43 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
         validatePhones(val);
     }
 
+     const submit: FormEventHandler = (e) => {
+        e.preventDefault();
+
+        /*const phones = value.split(',');
+         let valid = '';
+        for(const i in phones) {
+            if(/^\d{9}$/.test(phones[i])) {
+                valid += phones[i] + ','
+            }
+        }*/
+
+        data.phones = value.split(',');
+
+        post(route('messages.store'), {
+            onFinish: () => {
+                reset('title', 'message', 'sender_id');
+                setValue('');
+            }
+        });
+    };
+
+    useEffect(() => {
+        if (success) {
+            toast.success(success);
+        }
+    }, [success]);
+
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Messages" />
-            <div className="grid md:flex gap-6 p-10">
+            <form className="grid md:flex gap-6 p-10" onSubmit={submit}>
 
                 <div className="flex flex-col justify-between md:w-2/3 gap-5 border">
                     <div className="flex items-center bg-gray-50 px-2 py-5 border border-x-0 border-t-0">
                         <span className="text-base">Envoyer un message</span>
                     </div>
-                    <form className="flex flex-col gap-6" onSubmit={() => {}}>
+                    <div className="flex flex-col gap-6">
                         <div className="grid gap-2 px-2">
                             <Label htmlFor="title">Titre de la campagne</Label>
                              <Input
@@ -114,7 +147,7 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                                 onChange={(e) => setData('message', e.target.value)}
                             />
                             {data.message && <span className="text-sm font-semibold">Taille: {data.message.length} Caractères / {Math.ceil(data.message.length / 160)} SMS</span>}
-                            <InputError message={errors.title} />
+                            <InputError message={errors.message} />
                         </div>
                         <div className="flex items-center gap-6 bg-gray-50 px-2 py-3 border border-x-0 border-b-0">
                             <Button type="submit" className="cursor-pointer border-1 text-black border-black bg-transparent hover:bg-black hover:text-white" disabled={processing}>
@@ -125,7 +158,7 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                                Annuler
                             </Button>
                         </div>
-                    </form>
+                    </div>
                 </div>
 
                 <div className="flex flex-col gap-3 md:w-1/3">
@@ -136,13 +169,14 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                         </div>
                         <div className="px-3">
                             <Textarea
-                                id="contacts"
+                                id="phones"
                                 placeholder="678660800,694282821..."
                                 required
                                 className={cn("h-30", !isValid ? "focus-visible:border-red-400 focus-visible:shadow-red-400" : "focus-visible:shadow-green-400") }
                                 value={value}
                                 onChange={(e) => onChange(e.target.value) }
                             />
+                            <InputError message={errors.phones} />
                         </div>
                     </div>
 
@@ -154,12 +188,12 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
 
                             <div className="flex justify-between p-2">
                                 <span className="text-sm">Total numéros</span>
-                                <Badge>{value.split(',').length}</Badge>
+                                <Badge>{value ? value.split(',').length : 0}</Badge>
                             </div>
 
                             <div className="flex justify-between p-2 border border-x-0">
                                 <span className="text-sm">Numéros valides</span>
-                                <Badge className="bg-green-400">{ validCount }</Badge>
+                                <Badge className="bg-green-400">{ value ? validCount : 0 }</Badge>
                             </div>
 
                             <div className="flex justify-between p-2">
@@ -190,7 +224,7 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
 
                     </div>
                 </div>
-            </div>
+            </form>
         </AppLayout>
     )
 }
