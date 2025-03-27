@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Sms;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
-use App\Repositories\{ SenderRepository, MessageRepository, TransactionRepository };
+use App\Repositories\{ SenderRepository, MessageRepository, TransactionRepository, AccountRepository };
 use App\Http\Requests\MessageRequest;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -16,16 +16,19 @@ class MessageController extends Controller
     private $messageRepository;
     private $senderRepository;
     private $trxRepository;
+    private $accountRepository;
 
     public function __construct(
         MessageRepository $messageRepository,
         SenderRepository $senderRepository,
-        TransactionRepository $trxRepository
+        TransactionRepository $trxRepository,
+        AccountRepository $accountRepository
     )
     {
         $this->messageRepository = $messageRepository;
         $this->senderRepository = $senderRepository;
         $this->trxRepository = $trxRepository;
+        $this->accountRepository = $accountRepository;
     }
 
     public function index(Request $request): Response
@@ -42,8 +45,16 @@ class MessageController extends Controller
 
     public function store(MessageRequest $request): RedirectResponse {
 
+        session()->forget(['error', 'success']);
+
+        $sender = $this->senderRepository->all(['slug' => $request->sender_id])->first();
+
+        if($request->total > $sender->account->sms) {
+            return to_route('messages.index')->with('error', 'Solde sms insuffisant !');
+        }
+
         $campaign = $this->messageRepository->create([
-            'sender_id' => $this->senderRepository->all(['slug' => $request->sender_id])->first()->id,
+            'sender_id' => $sender->id,
             'title' => $request->title,
             'message' => $request->message
         ]);
@@ -58,6 +69,9 @@ class MessageController extends Controller
             }
 
         }
+
+        $account = $this->accountRepository->find($sender->account->id);
+        $account->decrement('sms', $request->total);
 
         return to_route('messages.index')->with('success', 'Opération réussie !');
 
