@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\{ BelongsTo, HasMany };
 
 class Campaign extends Model
 {
@@ -22,7 +23,11 @@ class Campaign extends Model
         ];
     }
 
-    public function sender(): belongsTo {
+    public function sender(): BelongsTo {
         return $this->belongsTo(Sender::class);
+    }
+
+    public function transactions(): HasMany {
+        return $this->hasMany(Transaction::class);
     }
 }

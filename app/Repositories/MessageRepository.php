@@ -22,4 +22,8 @@ class MessageRepository extends BaseRepository
         return Campaign::class;
     }
 
+    public function campaign($senders_id) {
+        return Campaign::whereIn('sender_id', $senders_id);
+    }
+
 }

@@ -20,7 +20,7 @@ class Transaction extends Model
         ];
     }
 
-    public function campaign(): belongsTo {
+    public function campaign(): BelongsTo {
         return $this->belongsTo(Campaign::class);
     }
 }

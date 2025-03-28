@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\Sms\SenderController;
 use App\Http\Controllers\Sms\MessageController;
+use App\Http\Controllers\Sms\DashboardController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -11,9 +12,11 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified'])->group(function () {
 
-    Route::get('dashboard', function () {
+    /* Route::get('dashboard', function () {
         return Inertia::render('dashboard');
-    })->name('dashboard');
+    })->name('dashboard'); */
+
+    Route::get('dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
     Route::get('senders', [SenderController::class, 'index'])->name('senders.index');
     Route::post('senders', [SenderController::class, 'store'])->name('senders.store');
