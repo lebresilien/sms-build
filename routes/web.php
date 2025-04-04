@@ -5,6 +5,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\Sms\SenderController;
 use App\Http\Controllers\Sms\MessageController;
 use App\Http\Controllers\Sms\DashboardController;
+use App\Http\Controllers\Sms\CreditController;
 
 Route::get('/', function () {
     return Inertia::render('welcome');
@@ -24,6 +25,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('messages/{type}', [MessageController::class, 'index'])->name('messages.index');
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
+
+    Route::get('credits', [CreditController::class, 'index'])->name('credits.index');
+    Route::post('credits', [CreditController::class, 'store'])->name('credits.store');
 });
 
 require __DIR__.'/settings.php';
