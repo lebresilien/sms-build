@@ -22,7 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('senders', [SenderController::class, 'store'])->name('senders.store');
     Route::delete('senders/{id}', [SenderController::class, 'delete'])->name('senders.delete');
 
-    Route::get('messages', [MessageController::class, 'index'])->name('messages.index');
+    Route::get('messages/{type}', [MessageController::class, 'index'])->name('messages.index');
     Route::post('messages', [MessageController::class, 'store'])->name('messages.store');
 });
 

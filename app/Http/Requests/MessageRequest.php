@@ -26,7 +26,8 @@ class MessageRequest extends FormRequest
             'sender_id' => ['required', 'string', 'exists:senders,slug'],
             'message' => ['required', 'string', 'min:5'],
             'phones' => ['required', 'array'],
-            'phones.*' => ['required', 'regex:/^\d{9}$/']
+            'phones.*' => ['required', 'regex:/^\d{9}$/'],
+            'type' => ['required', 'string'],
         ];
     }
 }

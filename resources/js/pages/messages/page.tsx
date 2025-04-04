@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { FormEventHandler, useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { toast } from "sonner";
+import * as XLSX from "xlsx";
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -34,25 +35,34 @@ type messageForm = {
     sender_id: string;
     message: string;
     phones: string[],
-    total: number
+    total: number,
+    type: string
 };
 
-export default function Messages({ senders, balance }: { senders: Sender[], balance: number }) {
+export default function Messages({ senders, balance, type }: { senders: Sender[], balance: number, type: string }) {
 
     const { data, setData, post, processing, errors, reset } = useForm<Required<messageForm>>({
         title: '',
         sender_id: '',
         message: '',
         phones: [],
-        total: 0
+        total: 0,
+        type: ''
     });
 
-    const { success, error } = usePage().props as { success?: string };
+    const { success, error } = usePage().props as { success?: string, error?: string };
 
     const [value, setValue] = useState('');
+    const [values, setValues] = useState<string[]>([]);
     const [isValid, setIsValid] = useState(true);
     const [validCount, setValidCount] = useState(0);
     const [invalidCount, setInvalidCount] = useState(0);
+    const [file, setFile] = useState<File | null>(null);
+    const [wrong, setWrong] = useState<string | null>(null);
+
+    const [totalContacts, setTotalContacts] = useState<number>(0);
+    const [validContacts, setValidContacts] = useState<number>(0);
+    const [invalidContacts, setInvalidContacts] = useState<number>(0);
 
     const validatePhones = (value: string) => {
 
@@ -73,16 +83,15 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
      const submit: FormEventHandler = (e) => {
         e.preventDefault();
 
-        /*const phones = value.split(',');
-         let valid = '';
-        for(const i in phones) {
-            if(/^\d{9}$/.test(phones[i])) {
-                valid += phones[i] + ','
-            }
-        }*/
+        data.type = type;
 
-        data.phones = value.split(',');
-        data.total = Math.ceil(data.message.length / 160) * validCount;
+        if(type === "input") {
+            data.phones = value.split(',');
+            data.total = Math.ceil(data.message.length / 160) * validCount;
+        } else {
+            data.phones = values;
+            data.total = Math.ceil(data.message.length / 160) * validContacts;
+        }
 
         post(route('messages.store'), {
             onFinish: () => {
@@ -90,6 +99,52 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                 setValue('');
             }
         });
+    };
+
+    const processFile = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: "binary" });
+          const sheetName = workbook.SheetNames[0];
+          const sheet = workbook.Sheets[sheetName];
+          //@ts-expect-error("don't verify")
+          const phoneNumbers: string[] = XLSX.utils.sheet_to_json(sheet, { header: 1 }).flat();
+
+          const total = phoneNumbers.length;
+          const valid = phoneNumbers.filter((num) => /^\d{9}$/.test(num)).length
+          const invalid = total - valid;
+
+
+          let temp = "";
+          for(const item of phoneNumbers) {
+            if(/^\d{9}$/.test(item)) {
+                temp += item + ",";
+            }
+          }
+          setValues(temp.slice(0, -1).split(','));
+          setTotalContacts(total);
+          setValidContacts(valid);
+          setInvalidContacts(invalid);
+        };
+        reader.readAsBinaryString(file);
+    };
+
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        if (event.target.files && event.target.files.length > 0) {
+          const selectedFile = event.target.files[0];
+
+          // Vérification du type de fichier (Excel uniquement)
+          if (!selectedFile.name.endsWith(".xls") && !selectedFile.name.endsWith(".xlsx") && !selectedFile.name.endsWith(".csv")) {
+            setWrong("Seuls les fichiers Excel (.xls, .xlsx, .csv) sont autorisés.");
+            setFile(null);
+            return;
+          }
+
+          setWrong(null);
+          setFile(selectedFile);
+          processFile(selectedFile);
+        }
     };
 
     useEffect(() => {
@@ -163,7 +218,7 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                                     Envoyer
                                 </Button>
                                 <Button className="border-1 border-red-400 text-red-400 bg-white hover:bg-red-400 hover:text-white cursor-pointer" onClick={() => reset('message', 'sender_id', 'title')} >
-                                Annuler
+                                    Annuler
                                 </Button>
                             </div>
                         </div>
@@ -172,53 +227,102 @@ export default function Messages({ senders, balance }: { senders: Sender[], bala
                     <div className="flex flex-col gap-3 md:w-1/3">
 
                         <div className="flex flex-col gap-2 border rounded-sm pb-4">
+
                             <div className="flex items-center bg-gray-50 border border-x-0 border-t-0 p-3">
-                                <span className="text-sm text-black">Entrer les contacts <small>(placer une virgule entre deux numéros)</small></span>
+                                {type === "input" ?
+                                    <span className="text-sm text-black">Entrer les contacts <small>(placer une virgule entre deux numéros)</small></span>
+                                    :
+                                    <span className="text-sm text-black">Charger un fichier <small>(Excel ou CSV, première colonne pour les numéros)</small></span>
+                                }
                             </div>
+
                             <div className="px-3">
-                                <Textarea
-                                    id="phones"
-                                    placeholder="678660800,694282821..."
-                                    required
-                                    className={cn("h-30", !isValid ? "focus-visible:border-red-400 focus-visible:shadow-red-400" : "focus-visible:shadow-green-400") }
-                                    value={value}
-                                    onChange={(e) => onChange(e.target.value) }
-                                />
-                                <InputError message={errors.phones} />
+                                {type === "input" ?
+                                    <>
+                                        <Textarea
+                                            id="phones"
+                                            placeholder="678660800,694282821..."
+                                            required
+                                            className={cn("h-30", !isValid ? "focus-visible:border-red-400 focus-visible:shadow-red-400" : "focus-visible:shadow-green-400") }
+                                            value={value}
+                                            onChange={(e) => onChange(e.target.value) }
+                                        />
+                                        <InputError message={errors.phones} />
+                                    </>:
+                                    <>
+                                        <Input
+                                            type="file"
+                                            accept=".xls,.xlsx,csv"
+                                            onChange={handleFileChange}
+                                            placeholder="lancement nouveau produit......"
+                                        />
+                                        {wrong && <InputError message={wrong} />}
+                                    </>
+                                }
                             </div>
                         </div>
 
                         <div className="flex flex-col gap-2 border rounded-sm pb-4">
+
                             <div className="flex items-center bg-gray-50 border border-x-0 border-t-0 p-3">
                                 <span className="text-sm text-black-700">Details des contacts</span>
                             </div>
+
                             <div className="flex flex-col border rounded-sm mx-2">
+                                {type === "input" ?
+                                    <>
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Total numéros</span>
+                                            <Badge>{value ? value.split(',').length : 0}</Badge>
+                                        </div>
 
-                                <div className="flex justify-between p-2">
-                                    <span className="text-sm">Total numéros</span>
-                                    <Badge>{value ? value.split(',').length : 0}</Badge>
-                                </div>
+                                        <div className="flex justify-between p-2 border border-x-0">
+                                            <span className="text-sm">Numéros valides</span>
+                                            <Badge className="bg-green-400">{ value ? validCount : 0 }</Badge>
+                                        </div>
 
-                                <div className="flex justify-between p-2 border border-x-0">
-                                    <span className="text-sm">Numéros valides</span>
-                                    <Badge className="bg-green-400">{ value ? validCount : 0 }</Badge>
-                                </div>
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Numéros invalides</span>
+                                            <Badge variant="destructive">{ invalidCount }</Badge>
+                                        </div>
 
-                                <div className="flex justify-between p-2">
-                                    <span className="text-sm">Numéros invalides</span>
-                                    <Badge variant="destructive">{ invalidCount }</Badge>
-                                </div>
+                                        <div className="flex justify-between p-2 border border-x-0">
+                                            <span className="text-sm">SMS/Contact</span>
+                                            <Badge>{Math.ceil(data.message.length / 160)}</Badge>
+                                        </div>
 
-                                <div className="flex justify-between p-2 border border-x-0">
-                                    <span className="text-sm">SMS/Contact</span>
-                                    <Badge>{Math.ceil(data.message.length / 160)}</Badge>
-                                </div>
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Total SMS</span>
+                                            <Badge>{Math.ceil(data.message.length / 160) * validCount}</Badge>
+                                        </div>
+                                    </>:
+                                    <>
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Total numéros</span>
+                                            <Badge>{totalContacts}</Badge>
+                                        </div>
 
-                                <div className="flex justify-between p-2">
-                                    <span className="text-sm">Total SMS</span>
-                                    <Badge>{Math.ceil(data.message.length / 160) * validCount}</Badge>
-                                </div>
+                                        <div className="flex justify-between p-2 border border-x-0">
+                                            <span className="text-sm">Numéros valides</span>
+                                            <Badge className="bg-green-400">{validContacts}</Badge>
+                                        </div>
 
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Numéros invalides</span>
+                                            <Badge variant="destructive">{invalidContacts}</Badge>
+                                        </div>
+
+                                        <div className="flex justify-between p-2 border border-x-0">
+                                            <span className="text-sm">SMS/Contact</span>
+                                            <Badge>{Math.ceil(data.message.length / 160)}</Badge>
+                                        </div>
+
+                                        <div className="flex justify-between p-2">
+                                            <span className="text-sm">Total SMS</span>
+                                            <Badge>{Math.ceil(data.message.length / 160) * validContacts}</Badge>
+                                        </div>
+                                    </>
+                                }
                             </div>
                         </div>
 

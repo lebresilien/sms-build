@@ -31,7 +31,7 @@ class MessageController extends Controller
         $this->accountRepository = $accountRepository;
     }
 
-    public function index(Request $request): Response
+    public function index(Request $request, string $type): Response
     {
         $data = $this->senderRepository->all(['account_id' => $request->user()->account->id]);
 
@@ -39,18 +39,19 @@ class MessageController extends Controller
 
         return Inertia::render('messages/page', [
             'senders' => $data,
-            'balance' => $balance
+            'balance' => $balance,
+            'type' => $type,
         ]);
     }
 
-    public function store(MessageRequest $request): RedirectResponse {
+    public function store(MessageRequest $request) {
 
         session()->forget(['error', 'success']);
 
         $sender = $this->senderRepository->all(['slug' => $request->sender_id])->first();
 
         if($request->total > $sender->account->sms) {
-            return to_route('messages.index')->with('error', 'Solde sms insuffisant !');
+            return to_route('messages.index', ['type' => $request->type])->with('error', 'Solde sms insuffisant !');
         }
 
         $campaign = $this->messageRepository->create([
@@ -60,20 +61,18 @@ class MessageController extends Controller
         ]);
 
         foreach($request->phones as $phone) {
-
             if($phone) {
                 $this->trxRepository->create([
                     'campaign_id' => $campaign->id,
                     'phone' => $phone,
                 ]);
             }
-
         }
 
         $account = $this->accountRepository->find($sender->account->id);
         $account->decrement('sms', $request->total);
 
-        return to_route('messages.index')->with('success', 'Opération réussie !');
+        return to_route('messages.index', ['type' => $request->type])->with('success', 'Opération réussie !');
 
     }
 }
