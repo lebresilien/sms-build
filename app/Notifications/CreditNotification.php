@@ -38,7 +38,7 @@ class CreditNotification extends Notification
         return (new MailMessage)
             ->subject('Nouvelle Recharge')
             ->line('Une nouvelle demande a été effectuée par ' . $this->data['user_name'])
-            ->line('Pour une recharge de ' . $this->data['sms'])
+            ->line('Pour une recharge de ' . $this->data['sms'] . ' SMS')
             ->line('Pour le compte ' . $this->data['account'])
             ->action('Valider', url('/'))
             ->line('Thank you for using our application!');
