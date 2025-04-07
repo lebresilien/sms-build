@@ -35,11 +35,11 @@ class MessageController extends Controller
     {
         $data = $this->senderRepository->all(['account_id' => $request->user()->account->id]);
 
-        $balance = $this->senderRepository->find($request->user()->account->id)->account->sms;
+        //$balance = $this->senderRepository->find($request->user()->account->id)->account->sms;
 
         return Inertia::render('messages/page', [
             'senders' => $data,
-            'balance' => $balance,
+            'balance' => $request->user()->account->sms,
             'type' => $type,
         ]);
     }

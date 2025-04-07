@@ -10,6 +10,7 @@ class SenderRepository extends BaseRepository
     protected $fieldSearchable = [
         'name',
         'slug',
+        'account_id'
     ];
 
     public function getFieldsSearchable(): array
