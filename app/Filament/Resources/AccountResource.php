@@ -54,7 +54,7 @@ class AccountResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\CreditsRelationManager::class
         ];
     }
 

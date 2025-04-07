@@ -60,7 +60,19 @@ class CreditResource extends Resource
                     ->label('Nombre de sms Livrés')
             ])
             ->filters([
-                //
+                /* Tables\Filters\Filter::make('account_id')
+                    ->form([
+                        Forms\Components\Select::make('value')
+                            ->label('Section')
+                            ->options(Account::all()->pluck('name', 'id'))
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['value'],
+                                fn (Builder $query, $value): Builder => $query->where('section_id', $value)
+                            );
+                }) */
             ])
             ->actions([
                 Tables\Actions\EditAction::make()
