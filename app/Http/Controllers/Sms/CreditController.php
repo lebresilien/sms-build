@@ -33,7 +33,8 @@ class CreditController extends Controller
         $this->creditRepository->create([
             'account_id' => $request->user()->account->id,
             'sms_asked' => $request->sms_asked,
-            'sms_delivered' => 0
+            'sms_delivered' => 0,
+            'type' => 'request'
         ]);
 
         $account = $this->accountRepository->find($request->user()->account->id);
